@@ -103,11 +103,16 @@ python -c "import sys; print '\n'.join(sys.path);"
 
 
 echo ""
-echo "### 5. Init.d script auditing"
+echo "### 5. Init.d script auditing";
+
+echo "rc scripts pointing to a user controled directory";
+#grep -n --color '/' /etc/rc.local;
+
 
 echo "Usage of predictable or fixed files in a writable folder"
 echo $writable;
 grep -n -R --color ' /tmp' /etc/init.d/*;
+
 
 
 
