@@ -163,7 +163,7 @@ echo "";
 echo -e "$ORANGE### 4. Specific edge cases which enable you to change privilege. $NOCOLOR"
 
 echo "Apache symlink test";
-find / -name apache*.conf -exec echo {} + -exec grep -i symlink --color {} + 2>/dev/null;
+find / -name "apache*.conf" -exec echo {} + -exec grep -i symlink --color {} + 2>/dev/null;
 
 echo "Pythonpath or environment var issues"
 python -c "import sys; print '\n'.join(sys.path);"
