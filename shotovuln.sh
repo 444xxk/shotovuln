@@ -47,7 +47,7 @@ echo "$validusers";
 
 # python and pip needed on the box TODO test here
 # pip install pexpect;
-
+# $pythonandpip=true | false
 
 
 
@@ -62,7 +62,7 @@ echo "Own / currentuser password provided!";
 echo "What can you do as sudo with this password :] ?";
 sudo -l;
 else
-echo "Now simple bruteforcing the loggedin user password through simple loop in su or sudo";
+echo "Now bruteforcing the loggedin user password through python script";
 # TODO faster sudo bruteforcer , using python child / pexpect
 # python tools/sudo_brute1.py < "$passwords" ; # here use a better script or smaller wordlist
 fi;
@@ -101,14 +101,14 @@ echo "Now bruting valid users on SSH ports using ssh passcript";
 echo "";
 echo -e "$ORANGE### 2. Auditing file and folders permissions to privesc $NOCOLOR"
 
-echo "Root owned files in non root owned directory, ie. non root user can replace root owned files"
+echo "Root owned files in non root owned directory, ie. other can replace root owned files"
 for x in $(find /var -type f -user root 2>/dev/null -exec dirname {} + | sort -u); do (echo -n "$x is owned by " && stat -c %U "$x") | grep -v 'root'; done
 
-echo "Writable directory in default PATH, ie. ..."
+echo "Writable directory in default PATH, ie. users can tamper PATH of SUID for instance"
 pathtotest=$(echo '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin' | tr ':' ' ');
 #for x in pathtotest; do ; done
 
-echo "Checking tmp files for passwords or secrets";
+echo "Checking tmp files for passwords or secrets and storing them, i.e. other can use the password to elevate or test password reuse";
 find /tmp/ -type f -size +0 -exec grep -i --color 'secret/|password/|' {} + 2>/dev/null;
 # TODO this step outputs useless information sometimes so filter it better
 
@@ -119,7 +119,7 @@ find /tmp/ -type f -size +0 -exec grep -i --color 'secret/|password/|' {} + 2>/d
 
 
 echo "";
-echo -e "$ORANGE### 3. Auditing SUID and SUID operations in a dumb way ... ie no arguments provided to them.$NOCOLOR"
+echo -e "$ORANGE### 3. Auditing SUID and SUID operations in a dumb way, no arguments provided to them.$NOCOLOR"
 # TODO be careful not to kill network
 ### https://www.pentestpartners.com/blog/exploiting-suid-executables/;
 
@@ -144,7 +144,12 @@ basename=$(basename "$suid");
 # TODO bugfix here the script stops at the middle of the list
 timeout 13s strace "$suid" 2>"$writedir"/.shotologs/"$basename".stracelog 1>/dev/null ;
 done < "$writedir/.suidbinaries";
+# do not move the bug from L140 - L146 because of crowdsource
 
+
+
+# add this generic vuln , SUID root loading from writable dir :/
+# https://www.exploit-db.com/exploits/41907/
 echo "Relative path opening in suid binaries, ie. you can fool the suid binary to open arbitrary file."
 grep -n 'open("\.' "$writedir"/.shotologs/* --color;
 grep -n 'open(' "$writedir"/.shotologs/* | grep -v 'open("/';
@@ -154,8 +159,6 @@ grep -n --color "getenv(" "$writedir"/.shotologs/*;
 
 echo "Exec used in suid binaries, ie. untrusted use of PATH potentialy."
 grep -n --color 'execve(\.' "$writedir"/.shotologs/*;
-
-
 
 
 
@@ -179,14 +182,15 @@ python -c "import sys; print '\n'.join(sys.path);"
 echo "";
 echo -e "$ORANGE### 5. Init.d script auditing $NOCOLOR";
 ### The problem is service (init.d) strips all environment variables but TERM, PATH and LANG which is a good thing
-echo "rc scripts pointing to a user controled directory";
+echo "RC scripts pointing to a user controled directory, i.e. user can write to it and get privilege";
 #grep -n --color '/' /etc/rc.local;
-echo "Init.d scripts using unfiltered environment variables";
+echo "Init.d scripts using unfiltered environment variablesm, i.e. user can inject into it and get privilege";
 grep -n -R -v 'PATH=\|LANG=\|TERM=' /etc/init.d/* | grep --color "PATH\|LANG\|TERM";
 # TODO confirm this is exploitable , better regexp , remove commented line
 # race PATH inject before init.d is starting
 # init.d is starting early
 echo "Usage of predictable or fixed files in a writable folder used by init.d";
+# TODO list all path used by init, filter writable ones
 usedbyinit="$(grep -n -R --color ' /tmp' /etc/init.d/* | sort -u)";
 # regex select only path
 # TODO crosscheck with writabledirs
