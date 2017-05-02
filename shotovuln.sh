@@ -25,7 +25,7 @@ echo "";
 
 
 echo -e "$ORANGE### 0. Pre work and preparing $NOCOLOR";
-echo "Saving writable folders for everyone, useful for next steps";
+echo " Saving writable folders for everyone, useful for next steps";
 writabledirs=$(find / -type d -perm /o+w ! -path "*mqueue*" 2>/dev/null);
 writedir=$(echo "$writabledirs" | head -n1);
 echo -e "$NOCOLOR Will use as writable dir: $RED $writedir";
@@ -39,9 +39,11 @@ wget -qO "$writedir/.wordlist" "https://raw.githubusercontent.com/berzerk0/Proba
 passwords="$writedir/.wordlist";
 fi;
 
-echo "Getting valid users for login";
+echo " Getting valid users for login";
 validusers=$(grep -v '/false' /etc/passwd | grep -v '/nologin' | cut -d ':' -f1);
-# echo "Valid users are $validusers";
+# debug
+echo "[debug] Valid users are:"
+echo "$validusers";
 
 # python and pip needed on the box TODO test here
 # pip install pexpect;
@@ -139,8 +141,8 @@ while read -r suid; do
 echo "[debug $suid]";
 basename=$(basename "$suid");
 #sleep 6s;
-# TODO debug this s**t;
-timeout 13s strace "$suid" -o "$writedir"/.shotologs/"$basename".stracelog 1>/dev/null 2>/dev/null ;
+# TODO bugfix here the script stops at the middle of the list
+timeout 13s strace "$suid" 2>"$writedir"/.shotologs/"$basename".stracelog 1>/dev/null ;
 done < "$writedir/.suidbinaries";
 
 echo "Relative path opening in suid binaries, ie. you can fool the suid binary to open arbitrary file."
@@ -151,7 +153,7 @@ echo "Environment variables used in suid binaries, ie. untrusted use of env vari
 grep -n --color "getenv(" "$writedir"/.shotologs/*;
 
 echo "Exec used in suid binaries, ie. untrusted use of PATH potentialy."
-grep -n --color 'execve' "$writedir"/.shotologs/*;
+grep -n --color 'execve(\.' "$writedir"/.shotologs/*;
 
 
 
@@ -162,10 +164,10 @@ grep -n --color 'execve' "$writedir"/.shotologs/*;
 echo "";
 echo -e "$ORANGE### 4. Specific edge cases which enable you to change privilege. $NOCOLOR"
 
-echo "Apache symlink test";
+echo "Apache symlink test, i.e. this allows you to check other users files and folders using the shared apache user";
 find / -name apache*.conf -exec echo {} + -exec grep -i symlink --color {} + 2>/dev/null;
 
-echo "Pythonpath or environment var issues"
+echo "Pythonpath or environment var issues, i.e."
 python -c "import sys; print '\n'.join(sys.path);"
 
 
@@ -180,12 +182,13 @@ echo -e "$ORANGE### 5. Init.d script auditing $NOCOLOR";
 echo "rc scripts pointing to a user controled directory";
 #grep -n --color '/' /etc/rc.local;
 echo "Init.d scripts using unfiltered environment variables";
-grep -n -R --color 'PATH=\|LANG=\|TERM=' /etc/init.d/*;
-# TODO confirm this is exploitable , better regexp
+grep -n -R -v 'PATH=\|LANG=\|TERM=' /etc/init.d/* | grep --color "PATH\|LANG\|TERM";
+# TODO confirm this is exploitable , better regexp , remove commented line
 # race PATH inject before init.d is starting
 # init.d is starting early
 echo "Usage of predictable or fixed files in a writable folder used by init.d";
-usedbyinit="$(grep -n -R --color ' /tmp' /etc/init.d/*)";
+usedbyinit="$(grep -n -R --color ' /tmp' /etc/init.d/* | sort -u)";
+# regex select only path
 # TODO crosscheck with writabledirs
 
 
@@ -194,9 +197,9 @@ usedbyinit="$(grep -n -R --color ' /tmp' /etc/init.d/*)";
 
 echo "";
 echo -e "$ORANGE### 6. Conf files password disclosure and password reuse $NOCOLOR";
-grep -v '^$\|^\s*\#' /etc/*.conf  | grep -i --color "password" -A1;
-grep -v '^$\|^\s*\#' /etc/*/*.conf  | grep -i --color "password" -A1;
-# TODO filter false positives
+echo "Checking passwords used in .conf files";
+find / -name "*.conf" 2>/dev/null -exec grep -i --color "password =\|password=\|password :\|password:" {} +;
+# TODO filter false positives, filter comments
 
 
 
@@ -205,7 +208,8 @@ grep -v '^$\|^\s*\#' /etc/*/*.conf  | grep -i --color "password" -A1;
 echo "";
 echo -e "$ORANGE### 7. Log file information disclosure $NOCOLOR";
 
-echo "Valid users history files";
+echo "Valid users history files harvesting info";
+historyfiles={1,2};
 # $validusers history grepping
 
 
