@@ -212,6 +212,8 @@ for path in $pythonpath; do find "$path" 2>/dev/null -type d -perm /o+w -exec ls
 echo "";
 echo "### 5. Init.d and RC scripts auditing";
 ### The problem is service (init.d) strips all environment variables but TERM, PATH and LANG which is a good thing
+# http://www.yolinux.com/TUTORIALS/LinuxTutorialInitProcess.html
+# https://serverfault.com/questions/374404/service-command-and-environment-variables
 echo "[x] RC.local scripts pointing to vulnerable directory, ie. other can write to it and get root privilege"; # example CVE-xxx
 pathstoaudit=$(grep  '^/' /etc/rc.local | cut -d ' ' -f1); # need better regex this suxx
 for path in $pathstoaudit; do
