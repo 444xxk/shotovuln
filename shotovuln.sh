@@ -143,12 +143,14 @@ echo "### 3. Auditing SUID and SUID operations, without arguments provided"
 ### https://www.pentestpartners.com/blog/exploiting-suid-executables/;
 echo "[x] SGID folders writable by others, ie. other can get group rights by writing to it"; #example CVE-xxx
 find / -type d -perm /g+s -perm /o+w -exec ls -alhd {} + 2>/dev/null;
-echo "SUID folders writable by others, ie. other can get user rights by writing to it"; #example CVE-xxx
+find / -type d -perm /g+s -writable -exec ls -alhd {} + 2>/dev/null;
+echo "[x] SUID folders writable by others, ie. other can get user rights by writing to it"; #example CVE-xxx
 find / -type d -perm /u+s -perm /o+w -exec ls -alhd {} + 2>/dev/null;
+find / -type d -perm /u+s -writable -exec ls -alhd {} + 2>/dev/null;
 # TODO echo "Test SUID conf files for error based info disclosure"
 # TODO code it --conf / -c / grep conf in help
 # example ./suidbinary -conf /etc/shadow outputs the user hashes
-echo "Generating SUID logs ... you might receive some pop ups and error message since we are starting all SUID binaries.";
+echo "[x] Generating SUID logs ... you might receive some pop ups and error message since we are starting all SUID binaries.";
 mkdir -p "$writedir/.shotologs";
 
 find / -perm /4000 2>/dev/null | sort -u > "$writedir/.suidbinaries";
@@ -182,7 +184,7 @@ find / 2>/dev/null -name "apache*.conf" -exec grep -n -i 'Options +FollowSymLink
 find / 2>/dev/null -name "httpd.conf" -exec grep -n -i 'Options +FollowSymLinks' {} +;
 echo "[x] Pythonpath variable issues, ie. if PATH is vulnerable and a python privilege script runs, other can inject into its PATH"; #example CVE-xxx
 pythonpath=$(python -c "import sys; print '\n'.join(sys.path);")
-for path in $pythonpath; do find "$path" 2>/dev/null -type d -perm /o+w -exec ls -alhd {} +; done
+for path in $pythonpath; do find "$path" 2>/dev/null -type d -writable -exec ls -alhd {} +; done
 
 
 
@@ -192,8 +194,14 @@ for path in $pythonpath; do find "$path" 2>/dev/null -type d -perm /o+w -exec ls
 echo "";
 echo "### 5. Init.d and RC scripts auditing";
 ### The problem is service (init.d) strips all environment variables but TERM, PATH and LANG which is a good thing
-echo "[x] RC scripts pointing to vulnerable directory, ie. other can write to it and get root privilege"; # example CVE-xxx
-grep  '/' /etc/rc.local;
+echo "[x] RC.local scripts pointing to vulnerable directory, ie. other can write to it and get root privilege"; # example CVE-xxx
+pathstoaudit=$(grep  '^/' /etc/rc.local | cut -d ' ' -f1); # need better regex this suxx
+for path in $pathstoaudit; do
+find "$path" 2>/dev/null -perm /o+w -exec ls -alh {} +;
+find "$path" 2>/dev/null -writable -exec ls -alh {} +;
+done;
+echo "[x] Check if users can restart services";
+# TODO code it
 echo "[x] Init.d scripts using unfiltered environment variables, ie. user can inject into it and get privilege"; #example CVE-xxx
 grep -n -R -v 'PATH=\|LANG=\|TERM=' /etc/init.d/* | grep "PATH\|LANG\|TERM";
 # TODO confirm this is exploitable , better regexp , remove commented line
@@ -201,9 +209,8 @@ grep -n -R -v 'PATH=\|LANG=\|TERM=' /etc/init.d/* | grep "PATH\|LANG\|TERM";
 # init.d is starting early
 echo "[x] Usage of predictable or fixed files in a writable folder used by init.d, ie. other can race and symlink file creation"; # example CVE-xxx
 # TODO list all path used by init, filter writable ones
-usedbyinit="$(grep -n -R --color ' /tmp' /etc/init.d/* | sort -u)";
-# regex select only path
-# TODO crosscheck with writabledirs
+# TODO better regex
+grep -nR '/tmp' /etc/init.d/* | grep -v '^#';
 
 
 
