@@ -4,7 +4,7 @@ echo "SHOTOVULN v0.2        *0* Senseiiii show me the path to R00t *o* "
 # insert ASCII art =)
 echo "Usage: $0 [currentpassword] [brute] [network]";
 echo "Vulnerabilities will be outputed under each [x] test";
-echo "";
+
 
 # PHILOSOPHY for devs
 # - non interactive
@@ -21,7 +21,7 @@ echo "";
 #main TODO make all ideas already present in comments work and finalize it v1.0
 # TODO need to check if "find" is the best cmd to check permissions
 
-
+echo "";
 echo "### 0. Pre work";
 
 brute=false;
@@ -60,6 +60,7 @@ if [ $brute == true ]; then
  # python and pip needed on the box TODO test here
  if ( which python );  then pip install pexpect; pythonandpip=true; fi;
 fi;
+
 
 
 
@@ -129,7 +130,7 @@ for user in $validusers; do cat "/home/$user/.ssh/id_rsa" 2>/dev/null; done
 # TODO extend filename, remove currentuser key
 
 echo "[x] Root owned files in non root owned directory, ie. other can replace root owned files or symlink"; #example CVE-xxx nginx package vuln, exploit with /etc/
-for x in $(find /var -type f -user root 2>/dev/null -exec dirname {} + | sort -u); do (echo -n "$x is owned by " && stat -c %U "$x but contains root files") | grep -v 'root'; done
+for x in $(find /var -type f -user root 2>/dev/null -exec dirname {} + | sort -u); do (echo -n "root files in folder $x owned by " && stat -c %U "$x") | grep -v 'root'; done
 
 echo "[x] Writable directory in default PATH, ie. other can tamper PATH of scripts which run automatically"; #example CVE-xxx
 pathstotest=$(echo "$PATH" | tr ':' '\n');
