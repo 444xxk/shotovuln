@@ -4,7 +4,7 @@ echo "SHOTOVULN v0.2        *0* Senseiiii show me the path to R00t *o* "
 # insert ASCII art =)
 echo "Usage: $0 [currentpassword] [brute] [network]";
 echo "Vulnerabilities will be outputed under each [x] test";
-# github 444xxk/shotovuln 
+# github 444xxk/shotovuln
 
 # PHILOSOPHY for devs
 # - non interactive
@@ -150,9 +150,17 @@ writablescripts=$(grep --color "$user" /etc/crontab | cut -f4 | cut -d ' ' -f1 |
 for script in $writablescripts; do find $(which "$script") 2>/dev/null -perm /o+w -exec ls -alh {} +; find "$script" 2>/dev/null -perm /o+w -exec ls -alh {} +; done;
 done
 
+# /dev/mem device permission
+echo "[x] Checking /dev/mem device permissions, ie. user can elevate by reading to it, trying to extract useful information";
+find /dev/mem -readable 2>/dev/null -exec ls -alh {} +;
 
 
+# TODO check not hardcoded /home but valid users home
+# check github.com/51x/LUI for users script
 
+# .gpg folder check
+echo "[x] Checking gpg folder secrets";
+ls -alh /home/*/.gpg;
 
 
 echo "";
