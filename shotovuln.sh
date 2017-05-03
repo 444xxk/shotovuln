@@ -219,7 +219,7 @@ echo "[x] Check if users can restart services";
 # TODO code it
 echo "[x] Init.d scripts using unfiltered environment variables, ie. user can inject into it and get privilege"; #example CVE-xxx
 echo "[debug] need better filtering"; # need better filtering
-grep -n -R -v 'PATH=\|LANG=\|TERM=' /etc/init.d/* | grep "PATH\|LANG\|TERM" | grep -v -E '^#';
+grep -R -v 'PATH=\|LANG=\|TERM=' /etc/init.d/* | grep " PATH\| LANG\| TERM" | grep -v '#' | grep -v 'export';
 # TODO confirm this is exploitable , better regexp , remove commented line
 # race PATH inject before init.d is starting
 # init.d is starting early
@@ -227,7 +227,7 @@ echo "[x] Usage of predictable or fixed files in a writable folder used by init.
 echo "[debug] need better filtering"; # need better filtering
 # TODO list all path used by init, filter writable ones
 # TODO better regex
-grep -nR '/tmp' /etc/init.d/* | grep -v -E '^#';
+grep -R '/tmp' /etc/init.d/* | grep -v '#';
 
 
 
