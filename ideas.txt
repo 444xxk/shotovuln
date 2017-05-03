@@ -1,0 +1,4 @@
+echo "swat"
+find / -name .ssh #find readable ssh keys
+find / | awk '/\.crt|\.pem|\.key|\.cert/' #find private keys or usefull certs
+find / |awk '/\.db|\.sql|\.sqlite/ && !/\/ports\/|msf/' #find sql databases with password hashes
