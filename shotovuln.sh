@@ -2,9 +2,9 @@
 
 echo "SHOTOVULN v0.2        *0* Senseiiii show me the path to R00t *o* "
 # insert ASCII art =)
-echo "";
 echo "Usage: $0 [currentpassword] [brute] [dwl]";
 echo "Vulnerabilities will be outputed under each [x] test";
+echo "";
 
 # PHILOSOPHY for devs
 # - non interactive
@@ -79,14 +79,13 @@ fi;
 echo "[x] Brute forcing local users via su"; # example CWE weak password
 # python
 
-echo "Now auditing SSH..."
 echo "[x] Getting SSH permissions";
 sshperm=$(grep -niR --color permit /etc/ssh/sshd_config);
-echo "[debug] : $sshperm";
+# echo "[debug] : $sshperm";
 
 echo "[x] Getting allow users (if any) in SSH config"
 sshusers=$(grep -niR --color allowusers /etc/ssh/sshd_config);
-echo "[debug]: $sshusers";
+# echo "[debug]: $sshusers";
 
 echo "[x] Checking port used in SSH config";
 sshport=$(grep Port /etc/ssh/sshd_config | cut -d ' ' -f2);
@@ -203,11 +202,13 @@ done;
 echo "[x] Check if users can restart services";
 # TODO code it
 echo "[x] Init.d scripts using unfiltered environment variables, ie. user can inject into it and get privilege"; #example CVE-xxx
+echo "[debug]"; # need better filtering
 grep -n -R -v 'PATH=\|LANG=\|TERM=' /etc/init.d/* | grep "PATH\|LANG\|TERM";
 # TODO confirm this is exploitable , better regexp , remove commented line
 # race PATH inject before init.d is starting
 # init.d is starting early
 echo "[x] Usage of predictable or fixed files in a writable folder used by init.d, ie. other can race and symlink file creation"; # example CVE-xxx
+echo "[debug]"; # need better filtering
 # TODO list all path used by init, filter writable ones
 # TODO better regex
 grep -nR '/tmp' /etc/init.d/* | grep -v '^#';
@@ -218,7 +219,7 @@ grep -nR '/tmp' /etc/init.d/* | grep -v '^#';
 
 echo "";
 echo -e "### 6. Configuration files password disclosure and password reuse";
-echo "[x] Checking readable passwords used in .conf files, ie. other can read and use then or try password reuse";
+echo "[x] Checking readable passwords used in .conf files, ie. other can read and use them or try password reuse";
 find / 2>/dev/null -name "*.conf"  -exec grep -n -i "password =\|password=\|password :\|password:" {} +;
 # TODO filter false positives, filter comments
 
@@ -244,8 +245,8 @@ echo "[x] Checking passwords inside local databases file"
 
 
 echo "";
-echo -e "$ORANGE### X. Privesc matrix $NOCOLOR";
+echo "### X. Privesc matrix";
 # we might need to create a matrix of user privs
-# user1 > user2 > user9 > group1 > rootgroup > root
+echo "[debug] sample : user1 > user2 > user9 > group1 > rootgroup > root";
 # BIG TODO , map the privilege , ie like user1 > user2 > user3 > root
 # privescpath=(user1,user2);(user2,root)
