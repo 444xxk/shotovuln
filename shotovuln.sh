@@ -2,7 +2,7 @@
 
 echo "SHOTOVULN v0.2        *0* Senseiiii show me the path to R00t *o* "
 # insert ASCII art =)
-echo "Usage: $0 [currentpassword] [brute] [dwl]";
+echo "Usage: $0 [currentpassword] [brute] [network]";
 echo "Vulnerabilities will be outputed under each [x] test";
 echo "";
 
@@ -25,24 +25,28 @@ echo "";
 echo "### 0. Pre work";
 
 brute=false;
-dwl=false;
+network=false;
 declare -a passfound;
 
 # if root exit
-if [ "$2" == "brute" ] ; then brute=true; echo "brute mode"; fi
-if [ "$3" == "dwl" ] ; then dwl=true; echo "download allowed"; fi
+if [ "$2" == "brute" ] ; then brute=true; echo "[B] brute mode"; else echo "[NB] no bruteforce" ; fi
+if [ "$3" == "network" ] ; then network=true; echo "[N] network allowed"; else echo "[NN] network not allowed"; fi
 
 echo "[o] Saving writable folders for everyone, useful for next steps";
 writabledirs=$(find / -type d -perm /o+w ! -path "*mqueue*" 2>/dev/null);
 writedir=$(echo "$writabledirs" | head -n1);
 echo "[o] Will use as writable dir: $writedir";
 
-currentuser=$(id);
-echo "[o] Current user and privileges is: $currentuser";
-echo "[o] Getting quality short password wordlist from internet...";
+tooldir="$(pwd)/tools/";
+echo "[o] Tools dir is : $tooldir"
 
-if [ $dwl == true ]; then
+currentuser=$(id);
+currentgroup=$(group);
+echo "[o] Current user and privileges is: $currentuser and groups: $currentgroup";
+
+if [ $network == true ]; then
  if [ ! -f "$writedir/.wordlist" ]; then
+ echo "[o] Getting quality short password wordlist from web";
  wget -qO "$writedir/.wordlist" "https://raw.githubusercontent.com/berzerk0/Probable-Wordlists/master/Real-Passwords/Top220-probable.txt"; # copy into own git
  fi;
 fi;
@@ -60,25 +64,8 @@ fi;
 
 
 
-
 echo "";
 echo "### 1. Auditing features-like paths to go to other privileges"
-# sudo and su brute https://www.altsci.com/concepts/sudo-and-su-considered-harmful-sudosu-bruteforce-utility
-if [ ! -z "$1" ] ; then
-echo " ! Own / currentuser password provided ! ";
-echo "[x] Checking what you can do with sudo with this password, ie. going to root"; # example no CVE feature
-sudo -l;
-else
-# if brute=true ; then
-echo "[x] Now bruteforcing the loggedin user password through python script"; # example CWE weak password
-# TODO faster sudo bruteforcer , using python child / pexpect
-# python tools/sudo_brute1.py < "$passwords" ; # here use a better script or smaller wordlist
-fi;
-
-# if brute == true ; then ; fi
-echo "[x] Brute forcing local users via su"; # example CWE weak password
-# python
-
 echo "[x] Getting SSH permissions";
 sshperm=$(grep -niR --color permit /etc/ssh/sshd_config);
 # echo "[debug] : $sshperm";
@@ -90,9 +77,27 @@ sshusers=$(grep -niR --color allowusers /etc/ssh/sshd_config);
 echo "[x] Checking port used in SSH config";
 sshport=$(grep Port /etc/ssh/sshd_config | cut -d ' ' -f2);
 
-echo "[x] Now bruting valid users on SSH ports using ssh passcript"; # example CWE weak password
-# ./tools/getsshpass-0.8.sh "$passwords";
-# else exit;
+# sudo and su brute https://www.altsci.com/concepts/sudo-and-su-considered-harmful-sudosu-bruteforce-utility
+if [ ! -z "$1" ] ; then
+echo " ! Currentuser password provided ! ";
+echo "[x] Checking what you can do with sudo with this password, ie. going to root"; # example no CVE feature
+# TODO non interactive here
+sudo -l;
+elif [ $brute == true ]; then
+ echo " ! No password provided ! "
+ echo "[x] Bruteforcing the loggedin user password through SUDO with python scripts"; # example CWE weak password
+ # TODO faster sudo bruteforcer , using python child / pexpect
+ # python $tooldir/sudo_brute1.py < "$passwords" ; # here use a better script or smaller wordlist
+
+ echo "[x] Brute forcing local users password through SU with python scripts"; # example CWE weak password
+ # python $tooldir/su_brute1.py < $password;
+
+
+ echo "[x] Now bruting valid users on SSH ports using ssh passcript"; # example CWE weak password
+ # $tooldir/getsshpass-0.8.sh "$passwords";
+ # else exit;
+
+fi;
 
 # TODO check if dmesg allows you to privesc echo "Do we have access to dmesg and check privesc related information ?"
 #dmesg script;
@@ -114,7 +119,7 @@ for user in $validusers; do cat "/home/$user/.ssh/id_rsa" 2>/dev/null; done
 # TODO extend filename, remove currentuser key
 
 echo "[x] Root owned files in non root owned directory, ie. other can replace root owned files or symlink"; #example CVE-xxx nginx package vuln, exploit with /etc/
-for x in $(find /var -type f -user root 2>/dev/null -exec dirname {} + | sort -u); do (echo -n "$x is owned by " && stat -c %U "$x") | grep -v 'root'; done
+for x in $(find /var -type f -user root 2>/dev/null -exec dirname {} + | sort -u); do (echo -n "$x is owned by " && stat -c %U "$x but contains root files") | grep -v 'root'; done
 
 echo "[x] Writable directory in default PATH, ie. other can tamper PATH of scripts which run automatically"; #example CVE-xxx
 pathstotest=$(echo "$PATH" | tr ':' '\n');
@@ -142,7 +147,7 @@ echo "### 3. Auditing SUID/SGID and SUID/SGID operations, without arguments prov
 ### https://www.pentestpartners.com/blog/exploiting-suid-executables/;
 echo "[x] SGID folders writable by others, ie. other can get group rights by writing to it"; #example CVE-xxx
 find / -type d -perm /g+s -perm /o+w -exec ls -alhd {} + 2>/dev/null;
-#find / -type d -perm /g+s -writable -exec ls -alhd {} + 2>/dev/null; # TODO writable by you but access to other group 
+#find / -type d -perm /g+s -writable -exec ls -alhd {} + 2>/dev/null; # TODO writable by you but access to other group
 echo "[x] SUID folders writable by others, ie. other can get user rights by writing to it"; #example CVE-xxx
 find / -type d -perm /u+s -perm /o+w -exec ls -alhd {} + 2>/dev/null;
 #find / -type d -perm /u+s -writable -exec ls -alhd {} + 2>/dev/null;
