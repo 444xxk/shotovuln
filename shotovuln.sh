@@ -80,16 +80,22 @@ echo "[x] Brute forcing local users via su"; # example CWE weak password
 # python
 
 echo "[x] Getting SSH permissions";
-sshperm=$(grep -niR --color permit /etc/ssh/sshd_config);
+if [ -f /etc/ssh/sshd_config ]; then
+    sshperm=$(grep -niR --color permit /etc/ssh/sshd_config);
+fi
 # echo "[debug] : $sshperm";
 
 echo "[x] Getting allow users (if any) in SSH config"
-sshusers=$(grep -niR --color allowusers /etc/ssh/sshd_config);
+if [ -f /etc/ssh/sshd_config ]; then
+    sshusers=$(grep -niR --color allowusers /etc/ssh/sshd_config);
+fi
 # echo "[debug]: $sshusers";
 
 echo "[x] Checking port used in SSH config";
-sshport=$(grep Port /etc/ssh/sshd_config | cut -d ' ' -f2);
-
+if [ -f /etc/ssh/sshd_config ]; then
+    sshport=$(grep Port /etc/ssh/sshd_config | cut -d ' ' -f2);
+fi
+ 
 echo "[x] Now bruting valid users on SSH ports using ssh passcript"; # example CWE weak password
 # ./tools/getsshpass-0.8.sh "$passwords";
 # else exit;
