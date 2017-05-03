@@ -12,7 +12,7 @@ echo "SHOTOVULN v0.1"
 echo -e "$GREEN Senseiiii *0* show me the path to $RED R00T $BLUE *o* ! $NOCOLOR";
 echo "";
 echo "Please run this script as low privilege user :]";
-echo -e "$ORANGE Usage: $NOCOLOR $0 $GREEN [currentuserpassword] [nobrute] [nodwl]";
+echo -e "$ORANGE Usage: $NOCOLOR $0 $GREEN [currentpassword] [brute] [dwl]";
 echo "";
 
 # PHILOSOPHY / IDEAS
@@ -25,6 +25,10 @@ echo "";
 
 
 echo -e "$ORANGE### 0. Pre work and preparing $NOCOLOR";
+
+brute=false;
+dwl=false;
+
 echo " Saving writable folders for everyone, useful for next steps";
 writabledirs=$(find / -type d -perm /o+w ! -path "*mqueue*" 2>/dev/null);
 writedir=$(echo "$writabledirs" | head -n1);
@@ -57,35 +61,31 @@ echo -e "$ORANGE### 1. Auditing features-like paths to go to other privileges $N
 # sudo and su brute https://www.altsci.com/concepts/sudo-and-su-considered-harmful-sudosu-bruteforce-utility
 if [ ! -z "$1" ] ; then
 echo "Own / currentuser password provided!";
-echo "What can you do as sudo with this password :] ?";
+echo "Checking what you can do with sudo with this password, ie. going to root"; # example no CVE feature
 sudo -l;
 else
-echo "Now bruteforcing the loggedin user password through python script";
+echo "Now bruteforcing the loggedin user password through python script"; # example CWE weak password
 # TODO faster sudo bruteforcer , using python child / pexpect
 # python tools/sudo_brute1.py < "$passwords" ; # here use a better script or smaller wordlist
 fi;
 
-echo "Brute forcing local users via su";
+echo "Brute forcing local users via su"; # example CWE weak password
 # python su brute script here
 
+echo "Now auditing SSH..."
 echo "Getting SSH permissions";
 sshperm=$(grep -niR --color permit /etc/ssh/sshd_config);
 echo "[debug] : $sshperm";
 
-echo "Getting allow users if any in SSH config"
+echo "Getting allow users (if any) in SSH config"
 sshusers=$(grep -niR --color allowusers /etc/ssh/sshd_config);
 echo "[debug]: $sshusers";
 
-echo "Scanning localhost ports for SSH detection and brute force";
-# TODO better ssh detection
-#nc -z -v 127.0.0.1 22;
-#nc -z -v 127.0.0.1 222;
-#nc -z -v 127.0.0.1 2222;
-#nc -z -v 127.0.0.1 22222;
-#nc -z -v 127.0.0.1 10022;
+echo "Checking port used in SSH config";
+sshport=$(grep Port /etc/ssh/sshd_config | cut -d ' ' -f2);
 
-echo "Now bruting valid users on SSH ports using ssh passcript";
-# ./tools/sshpassscript.sh "$passwords";
+echo "Now bruting valid users on SSH ports using ssh passcript"; # example CWE weak password
+# ./tools/getsshpass-0.8.sh "$passwords";
 
 # TODO check if dmesg allows you to privesc echo "Do we have access to dmesg and check privesc related information ?"
 #dmesg script;
@@ -99,20 +99,20 @@ echo "Now bruting valid users on SSH ports using ssh passcript";
 echo "";
 echo -e "$ORANGE### 2. Auditing file and folders permissions to privesc $NOCOLOR"
 
-echo "Simply cating /etc/shadow and /etc/shadow derivatives, might be lucky";
+echo "Simply cating /etc/shadow and /etc/shadow derivatives, might be lucky"; # CWE weak file folder permissions
 cat /etc/shadow 2>/dev/null;
 cat /etc/shadow.old 2>/dev/null;
 cat /etc/shadow.bak 2>/dev/null;
 
-echo "Checking private RSA keys in home folders"
+echo "Checking private RSA keys in home folders"; # CWE weak file folder permissions
 for user in $validusers; do cat "/home/$user/.ssh/id_rsa" 2>/dev/null; done
 # extended
 
-echo "Root owned files in non root owned directory, ie. other can replace root owned files" # example nginx vuln on debian
+echo "Root owned files in non root owned directory, ie. other can replace root owned files"; #example CVE-xxx nginx package vuln
 for x in $(find /var -type f -user root 2>/dev/null -exec dirname {} + | sort -u); do (echo -n "$x is owned by " && stat -c %U "$x") | grep -v 'root'; done
 
-echo "Writable directory in default PATH, ie. other can tamper PATH of automatically run scripts"
-pathtotest=$(echo '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin' | tr ':' ' ');
+echo "Writable directory in default PATH, ie. other can tamper PATH of automatically run scripts"; #example CVE-xxx
+pathstotest=$(echo "$PATH" | tr ':' '\n');
 #for x in pathtotest; do ; done
 
 echo "Checking tmp files for passwords or secrets and storing them, i.e. other can use the password to elevate or test password reuse";
@@ -120,7 +120,13 @@ find /tmp/ -type f -size +0 -exec grep -i --color 'secret/|password/|' {} + 2>/d
 # TODO this step outputs useless information sometimes so filter it better
 # need to be reviewed and confirmed useful
 
-# crontab check
+echo "Checking crontab script protection, ie. other can write to crontab scripts" #example CVE-xxx
+for user in $validusers; do
+writablescripts=$(grep --color "$user" /etc/crontab | cut -f4 | cut -d ' ' -f1 | sort -u);
+for script in $writablescripts; do find $(which "$script") -perm /o+w -exec ls -alh {} +; done;
+done
+
+# cat /etc/crontab
 
 
 
@@ -176,10 +182,10 @@ grep -n --color 'execve(\.' "$writedir"/.shotologs/*;
 echo "";
 echo -e "$ORANGE### 4. Specific edge cases which enable you to change privilege. $NOCOLOR"
 
-echo "Apache symlink test, i.e. allows other to check files and folders of other users using the shared apache account"; # example no CVE but feature
+echo "Apache symlink test, ie. allows other to check files and folders of other users using the shared apache account"; # example no CVE but feature
 find / -name "apache*.conf" -exec echo {} + -exec grep -i symlink --color {} + 2>/dev/null;
 
-echo "Pythonpath variable issues, i.e. if PATH is vulnerable and a python privilege script runs, other can inject into its PATH"; # example CVE-xxx
+echo "Pythonpath variable issues, ie. if PATH is vulnerable and a python privilege script runs, other can inject into its PATH"; # example CVE-xxx
 pythonpath=$(python -c "import sys; print '\n'.join(sys.path);")
 
 
@@ -191,14 +197,14 @@ pythonpath=$(python -c "import sys; print '\n'.join(sys.path);")
 echo "";
 echo -e "$ORANGE### 5. Init.d script auditing $NOCOLOR";
 ### The problem is service (init.d) strips all environment variables but TERM, PATH and LANG which is a good thing
-echo "RC scripts pointing to vulnerable directory, i.e. other can write to it and get root privilege"; # example CVE-xxx 
+echo "RC scripts pointing to vulnerable directory, ie. other can write to it and get root privilege"; # example CVE-xxx
 #grep -n --color '/' /etc/rc.local;
-echo "Init.d scripts using unfiltered environment variablesm, i.e. user can inject into it and get privilege";
+echo "Init.d scripts using unfiltered environment variablesm, ie. user can inject into it and get privilege";
 grep -n -R -v 'PATH=\|LANG=\|TERM=' /etc/init.d/* | grep --color "PATH\|LANG\|TERM";
 # TODO confirm this is exploitable , better regexp , remove commented line
 # race PATH inject before init.d is starting
 # init.d is starting early
-echo "Usage of predictable or fixed files in a writable folder used by init.d";
+echo "Usage of predictable or fixed files in a writable folder used by init.d, ie. other can race and symlink file creation"; # example CVE-xxx
 # TODO list all path used by init, filter writable ones
 usedbyinit="$(grep -n -R --color ' /tmp' /etc/init.d/* | sort -u)";
 # regex select only path
@@ -221,7 +227,7 @@ find / -name "*.conf" 2>/dev/null -exec grep -n -i --color "password =\|password
 echo "";
 echo -e "$ORANGE### 7. Log file information disclosure $NOCOLOR";
 
-echo "Checking history files and harvesting info";
+echo "Checking history files and harvesting info, ie. other can read password and try password reuse"; # example CWE file folder permission
 find / -name "*history" 2>/dev/null -exec grep -n -i --color "--password\|--pass\|-pass\|-p" {} +;
 # $validusers history grepping
 
