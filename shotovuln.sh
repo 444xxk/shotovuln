@@ -41,7 +41,7 @@ tooldir="$(pwd)/tools/";
 echo "[o] Tools dir is : $tooldir"
 
 currentuser=$(id);
-currentgroup=$(group);
+currentgroup=$(groups);
 echo "[o] Current user and privileges is: $currentuser and groups: $currentgroup";
 
 if [ $network == true ]; then
