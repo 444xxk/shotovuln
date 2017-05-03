@@ -219,7 +219,7 @@ echo "[x] Check if users can restart services";
 # TODO code it
 echo "[x] Init.d scripts using unfiltered environment variables, ie. user can inject into it and get privilege"; #example CVE-xxx
 echo "[debug] need better filtering"; # need better filtering
-grep -n -R -v 'PATH=\|LANG=\|TERM=' /etc/init.d/* | grep "PATH\|LANG\|TERM";
+grep -n -R -v 'PATH=\|LANG=\|TERM=' /etc/init.d/* | grep "PATH\|LANG\|TERM" | grep -v -E '^#';
 # TODO confirm this is exploitable , better regexp , remove commented line
 # race PATH inject before init.d is starting
 # init.d is starting early
@@ -227,7 +227,7 @@ echo "[x] Usage of predictable or fixed files in a writable folder used by init.
 echo "[debug] need better filtering"; # need better filtering
 # TODO list all path used by init, filter writable ones
 # TODO better regex
-grep -nR '/tmp' /etc/init.d/* | grep -v '^#';
+grep -nR '/tmp' /etc/init.d/* | grep -v -E '^#';
 
 
 
@@ -238,7 +238,7 @@ echo -e "### 6. Configuration files password disclosure and password reuse";
 echo "[x] Checking readable passwords used in .conf files, ie. other can read and use them or try password reuse";
 conffiles=$(find / -type f -readable 2>/dev/null -name "*.conf" | sort -u);
 for file in $conffiles; do
- if (grep -i "password =\|password=\|password :\|password:" "$file" | grep -E "^#" -v); then echo " ! Passwords found in $file" ; fi; 
+ if (grep -i "password =\|password=\|password :\|password:" "$file" | grep -E "^#" -v); then echo " ! Passwords found in $file" ; fi;
 done
 #find / 2>/dev/null -name "*.conf"  -exec grep -n -i "password =\|password=\|password :\|password:" {} +;
 # TODO filter false positives, filter comments
