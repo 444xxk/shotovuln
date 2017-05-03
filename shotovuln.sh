@@ -183,7 +183,7 @@ find / 2>/dev/null -name "apache*.conf" -exec grep -n -i 'Options +FollowSymLink
 find / 2>/dev/null -name "httpd.conf" -exec grep -n -i 'Options +FollowSymLinks' {} +;
 echo "[x] Pythonpath variable issues, ie. if PATH is vulnerable and a python privilege script runs, other can inject into its PATH"; #example CVE-xxx
 pythonpath=$(python -c "import sys; print '\n'.join(sys.path);")
-for path in $pythonpath; do find "$path" 2>/dev/null -type d -writable -exec ls -alhd {} +; done
+for path in $pythonpath; do find "$path" 2>/dev/null -type d -perm /o+w -exec ls -alhd {} +; done
 
 
 
