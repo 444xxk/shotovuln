@@ -108,11 +108,11 @@ echo "### 2. Auditing file and folders permissions for privesc"
 echo "[x] Simply cating /etc/shadow and /etc/shadow derivatives, ie. might be lucky"; #CWE weak file folder permissions
 cat /etc/shadow 2>/dev/null;
 cat /etc/shadow.* 2>/dev/null;
-
+find / 2>/dev/null -readable -name '/*shadow*' -exec grep -n ':/' {} +;
 
 echo "[x] Checking readable default private RSA keys in home folders, ie. wrong RSA key permissions"; #CWE weak file folder permissions
 for user in $validusers; do cat "/home/$user/.ssh/id_rsa" 2>/dev/null; done
-# extend filename
+# TODO extend filename, remove currentuser key
 
 echo "[x] Root owned files in non root owned directory, ie. other can replace root owned files or symlink"; #example CVE-xxx nginx package vuln, exploit with /etc/
 for x in $(find /var -type f -user root 2>/dev/null -exec dirname {} + | sort -u); do (echo -n "$x is owned by " && stat -c %U "$x") | grep -v 'root'; done
@@ -178,7 +178,8 @@ grep -n --color 'execve(\.' "$writedir"/.shotologs/*;
 echo "";
 echo "### 4. Specific edge cases which enable you to change privilege"
 echo "[x] Apache symlink test, ie. allows other to check files and folders of other users using the shared apache account"; #example no CVE but feature
-find / 2>/dev/null -name "apache*.conf" -exec grep -n -i symlink {} +;
+find / 2>/dev/null -name "apache*.conf" -exec grep -n -i 'Options +FollowSymLinks' {} +;
+find / 2>/dev/null -name "httpd.conf" -exec grep -n -i 'Options +FollowSymLinks' {} +;
 echo "[x] Pythonpath variable issues, ie. if PATH is vulnerable and a python privilege script runs, other can inject into its PATH"; #example CVE-xxx
 pythonpath=$(python -c "import sys; print '\n'.join(sys.path);")
 for path in $pythonpath; do find "$path" 2>/dev/null -type d -perm /o+w -exec ls -alhd {} +; done
@@ -189,10 +190,10 @@ for path in $pythonpath; do find "$path" 2>/dev/null -type d -perm /o+w -exec ls
 
 
 echo "";
-echo "### 5. Init.d scripts auditing";
+echo "### 5. Init.d and RC scripts auditing";
 ### The problem is service (init.d) strips all environment variables but TERM, PATH and LANG which is a good thing
 echo "[x] RC scripts pointing to vulnerable directory, ie. other can write to it and get root privilege"; # example CVE-xxx
-#TODO finish it : grep -n --color '/' /etc/rc.local;
+grep  '/' /etc/rc.local;
 echo "[x] Init.d scripts using unfiltered environment variables, ie. user can inject into it and get privilege"; #example CVE-xxx
 grep -n -R -v 'PATH=\|LANG=\|TERM=' /etc/init.d/* | grep "PATH\|LANG\|TERM";
 # TODO confirm this is exploitable , better regexp , remove commented line
