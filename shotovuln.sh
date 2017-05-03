@@ -4,7 +4,7 @@ echo "SHOTOVULN v0.2        *0* Senseiiii show me the path to R00t *o* "
 # insert ASCII art =)
 echo "Usage: $0 [currentpassword] [brute] [network]";
 echo "Vulnerabilities will be outputed under each [x] test";
-
+# github 444xxk/shotovuln 
 
 # PHILOSOPHY for devs
 # - non interactive
@@ -16,7 +16,7 @@ echo "Vulnerabilities will be outputed under each [x] test";
 # - output to file for better read
 # - try to document the vuln in comment (ie CVE-xxx CWE)
 # requirement on the compromised box : *nix OS, bash [+ python , pip : for brute]
-# typical usage, you get a webshell and you want to elevate
+# typical usage: you get a webshell and you want to elevate
 
 #main TODO make all ideas already present in comments work and finalize it v1.0
 # TODO need to check if "find" is the best cmd to check permissions
