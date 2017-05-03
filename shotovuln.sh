@@ -43,7 +43,7 @@ echo "[o] Getting quality short password wordlist from internet...";
 
 if [ $dwl == true ]; then
  if [ ! -f "$writedir/.wordlist" ]; then
- wget -qO "$writedir/.wordlist" "https://raw.githubusercontent.com/berzerk0/Probable-Wordlists/master/Real-Passwords/Top220-probable.txt"; # 200 to be fast
+ wget -qO "$writedir/.wordlist" "https://raw.githubusercontent.com/berzerk0/Probable-Wordlists/master/Real-Passwords/Top220-probable.txt"; # copy into own git
  fi;
 fi;
 
@@ -56,6 +56,9 @@ if [ $brute == true ]; then
  # python and pip needed on the box TODO test here
  if ( which python );  then pip install pexpect; pythonandpip=true; fi;
 fi;
+
+
+
 
 
 echo "";
@@ -104,21 +107,21 @@ echo "### 2. Auditing file and folders permissions for privesc"
 
 echo "[x] Simply cating /etc/shadow and /etc/shadow derivatives, ie. might be lucky"; #CWE weak file folder permissions
 cat /etc/shadow 2>/dev/null;
-cat /etc/shadow.old 2>/dev/null;
-cat /etc/shadow.bak 2>/dev/null;
+cat /etc/shadow.* 2>/dev/null;
+
 
 echo "[x] Checking readable default private RSA keys in home folders, ie. wrong RSA key permissions"; #CWE weak file folder permissions
 for user in $validusers; do cat "/home/$user/.ssh/id_rsa" 2>/dev/null; done
 # extend filename
 
-echo "[x] Root owned files in non root owned directory, ie. other can replace root owned files"; #example CVE-xxx nginx package vuln
+echo "[x] Root owned files in non root owned directory, ie. other can replace root owned files or symlink"; #example CVE-xxx nginx package vuln, exploit with /etc/
 for x in $(find /var -type f -user root 2>/dev/null -exec dirname {} + | sort -u); do (echo -n "$x is owned by " && stat -c %U "$x") | grep -v 'root'; done
 
 echo "[x] Writable directory in default PATH, ie. other can tamper PATH of scripts which run automatically"; #example CVE-xxx
 pathstotest=$(echo "$PATH" | tr ':' '\n');
 for path in $pathstotest; do find "$path" 2>/dev/null -type d -perm /o+w -exec ls -alhd {} +; done
 
-echo "[x] Checking usual temporary folder for passwords or secrets and storing them, i.e. other can use the password to elevate or test password reuse"; # example CVE-xxx CWE info disclosure
+echo "[x] Checking usual temporary folders for passwords or secrets and storing them, i.e. other can use the password to elevate or test password reuse"; # example CVE-xxx CWE info disclosure
 find /tmp/  2>/dev/null -type f -size +0 -exec grep -i 'secret/|password/|' {} +;
 find /dev/shm  2>/dev/null -type f -size +0 -exec grep -i 'secret/|password/|' {} +;
 # TODO hash find in this content
@@ -135,12 +138,12 @@ done
 
 
 echo "";
-echo "### 3. Auditing SUID and SUID operations without arguments provided"
+echo "### 3. Auditing SUID and SUID operations, without arguments provided"
 # TODO be careful not to kill network with SUID
 ### https://www.pentestpartners.com/blog/exploiting-suid-executables/;
-echo "[x] SGID folders writable by others, ie. other can get group rights by writing to it"
+echo "[x] SGID folders writable by others, ie. other can get group rights by writing to it"; #example CVE-xxx
 find / -type d -perm /g+s -perm /o+w -exec ls -alhd {} + 2>/dev/null;
-echo "SUID folders writable by others, ie. other can get user rights by writing to it"
+echo "SUID folders writable by others, ie. other can get user rights by writing to it"; #example CVE-xxx
 find / -type d -perm /u+s -perm /o+w -exec ls -alhd {} + 2>/dev/null;
 # TODO echo "Test SUID conf files for error based info disclosure"
 # TODO code it --conf / -c / grep conf in help
@@ -159,7 +162,7 @@ done < "$writedir/.suidbinaries";
 
 # add this generic vuln , SUID root loading from writable dir :/
 # https://www.exploit-db.com/exploits/41907/
-echo "[x] Relative path opening in SUID binaries, ie. other can fool the SUID binary to open arbitrary file." #example CVE-xxx
+echo "[x] Relative path opening in SUID binaries, ie. other can fool the SUID binary to open arbitrary files." #example CVE-xxx
 grep -n 'open("\.' "$writedir"/.shotologs/* --color;
 grep -n 'open(' "$writedir"/.shotologs/* | grep -v 'open("/';
 echo "[x] Environment variables used in suid binaries, ie. other can inject into env, untrusted use of env variables." #example CVE-xxx
@@ -175,8 +178,8 @@ grep -n --color 'execve(\.' "$writedir"/.shotologs/*;
 echo "";
 echo "### 4. Specific edge cases which enable you to change privilege"
 echo "[x] Apache symlink test, ie. allows other to check files and folders of other users using the shared apache account"; #example no CVE but feature
-find / -name "apache*.conf" -exec echo {} + -exec grep -i symlink --color {} + 2>/dev/null;
-echo "[x] Pythonpath variable issues, ie. if PATH is vulnerable and a python privilege script runs, other can inject into its PATH"; # example CVE-xxx
+find / 2>/dev/null -name "apache*.conf" -exec grep -n -i symlink {} +;
+echo "[x] Pythonpath variable issues, ie. if PATH is vulnerable and a python privilege script runs, other can inject into its PATH"; #example CVE-xxx
 pythonpath=$(python -c "import sys; print '\n'.join(sys.path);")
 for path in $pythonpath; do find "$path" 2>/dev/null -type d -perm /o+w -exec ls -alhd {} +; done
 
@@ -189,8 +192,8 @@ echo "";
 echo "### 5. Init.d scripts auditing";
 ### The problem is service (init.d) strips all environment variables but TERM, PATH and LANG which is a good thing
 echo "[x] RC scripts pointing to vulnerable directory, ie. other can write to it and get root privilege"; # example CVE-xxx
-#grep -n --color '/' /etc/rc.local;
-echo "[x] Init.d scripts using unfiltered environment variables, ie. user can inject into it and get privilege";
+#TODO finish it : grep -n --color '/' /etc/rc.local;
+echo "[x] Init.d scripts using unfiltered environment variables, ie. user can inject into it and get privilege"; #example CVE-xxx
 grep -n -R -v 'PATH=\|LANG=\|TERM=' /etc/init.d/* | grep "PATH\|LANG\|TERM";
 # TODO confirm this is exploitable , better regexp , remove commented line
 # race PATH inject before init.d is starting
@@ -206,7 +209,7 @@ usedbyinit="$(grep -n -R --color ' /tmp' /etc/init.d/* | sort -u)";
 
 
 echo "";
-echo -e "### 6. Conf files password disclosure and password reuse";
+echo -e "### 6. Configuration files password disclosure and password reuse";
 echo "[x] Checking readable passwords used in .conf files, ie. other can read and use then or try password reuse";
 find / 2>/dev/null -name "*.conf"  -exec grep -n -i "password =\|password=\|password :\|password:" {} +;
 # TODO filter false positives, filter comments
