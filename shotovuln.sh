@@ -89,6 +89,9 @@ if [ ! -z "$1" ] ; then
 echo " ! Currentuser password provided ! ";
 echo "[x] Checking what you can do with sudo with this password, ie. going to root"; # example no CVE feature
 # TODO non interactive here
+
+# TODO idea for sudo: list programs that escalate through NOPASSWD. eg some guys think it's a good idea to nopasswd vim, nano, nmap...etc but in these cases you get root.
+
 sudo -l;
 elif [ $brute == true ]; then
  echo " ! No password provided ! "
