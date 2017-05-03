@@ -236,7 +236,11 @@ grep -nR '/tmp' /etc/init.d/* | grep -v '^#';
 echo "";
 echo -e "### 6. Configuration files password disclosure and password reuse";
 echo "[x] Checking readable passwords used in .conf files, ie. other can read and use them or try password reuse";
-find / 2>/dev/null -name "*.conf"  -exec grep -n -i "password =\|password=\|password :\|password:" {} +;
+conffiles=$(find / -type f -readable 2>/dev/null -name "*.conf" | sort -u);
+for file in $conffiles; do
+ if (grep -i "password =\|password=\|password :\|password:" "$file" | grep -E "^#" -v); then echo " ! Passwords found in $file" ; fi; 
+done
+#find / 2>/dev/null -name "*.conf"  -exec grep -n -i "password =\|password=\|password :\|password:" {} +;
 # TODO filter false positives, filter comments
 
 
