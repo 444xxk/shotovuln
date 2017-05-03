@@ -96,8 +96,6 @@ echo "Now bruting valid users on SSH ports using ssh passcript";
 
 
 
-
-
 echo "";
 echo -e "$ORANGE### 2. Auditing file and folders permissions to privesc $NOCOLOR"
 
