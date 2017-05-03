@@ -143,15 +143,15 @@ done
 
 
 echo "";
-echo "### 3. Auditing SUID and SUID operations, without arguments provided"
+echo "### 3. Auditing SUID/SGID and SUID/SGID operations, without arguments provided"
 # TODO be careful not to kill network with SUID
 ### https://www.pentestpartners.com/blog/exploiting-suid-executables/;
 echo "[x] SGID folders writable by others, ie. other can get group rights by writing to it"; #example CVE-xxx
 find / -type d -perm /g+s -perm /o+w -exec ls -alhd {} + 2>/dev/null;
-find / -type d -perm /g+s -writable -exec ls -alhd {} + 2>/dev/null;
+#find / -type d -perm /g+s -writable -exec ls -alhd {} + 2>/dev/null; # TODO writable by you but access to other group 
 echo "[x] SUID folders writable by others, ie. other can get user rights by writing to it"; #example CVE-xxx
 find / -type d -perm /u+s -perm /o+w -exec ls -alhd {} + 2>/dev/null;
-find / -type d -perm /u+s -writable -exec ls -alhd {} + 2>/dev/null;
+#find / -type d -perm /u+s -writable -exec ls -alhd {} + 2>/dev/null;
 # TODO echo "Test SUID conf files for error based info disclosure"
 # TODO code it --conf / -c / grep conf in help
 # example ./suidbinary -conf /etc/shadow outputs the user hashes
@@ -189,7 +189,7 @@ find / 2>/dev/null -name "apache*.conf" -exec grep -n -i 'Options +FollowSymLink
 find / 2>/dev/null -name "httpd.conf" -exec grep -n -i 'Options +FollowSymLinks' {} +;
 echo "[x] Pythonpath variable issues, ie. if PATH is vulnerable and a python privilege script runs, other can inject into its PATH"; #example CVE-xxx
 pythonpath=$(python -c "import sys; print '\n'.join(sys.path);")
-for path in $pythonpath; do find "$path" 2>/dev/null -type d -writable -exec ls -alhd {} +; done
+for path in $pythonpath; do find "$path" 2>/dev/null -type d -perm /o+w -exec ls -alhd {} +; done
 
 
 
@@ -208,13 +208,13 @@ done;
 echo "[x] Check if users can restart services";
 # TODO code it
 echo "[x] Init.d scripts using unfiltered environment variables, ie. user can inject into it and get privilege"; #example CVE-xxx
-echo "[debug]"; # need better filtering
+echo "[debug] need better filtering"; # need better filtering
 grep -n -R -v 'PATH=\|LANG=\|TERM=' /etc/init.d/* | grep "PATH\|LANG\|TERM";
 # TODO confirm this is exploitable , better regexp , remove commented line
 # race PATH inject before init.d is starting
 # init.d is starting early
 echo "[x] Usage of predictable or fixed files in a writable folder used by init.d, ie. other can race and symlink file creation"; # example CVE-xxx
-echo "[debug]"; # need better filtering
+echo "[debug] need better filtering"; # need better filtering
 # TODO list all path used by init, filter writable ones
 # TODO better regex
 grep -nR '/tmp' /etc/init.d/* | grep -v '^#';
@@ -246,13 +246,14 @@ find / 2>/dev/null -name "*history"  -exec grep -n -i "--password\|--pass\|-pass
 echo "";
 echo "### 8. Database file information disclosure";
 echo "[x] Checking passwords inside local databases file"
-#find / 2>/dev/null -name "*.sqlite" -readable -exec grep -i 'pass' {} +;
+sqlitefiles=$(find / 2>/dev/null -name "*.sqlite" -readable);
 
 
 
 echo "";
 echo "### X. Privesc matrix";
 # we might need to create a matrix of user privs
-echo "[debug] sample : user1 > user2 > user9 > group1 > rootgroup > root";
+echo "[x] Creating a matrix of user privilege switch ..."
+echo "[debug] sample : $currentuser > user2 > user9 > group1 > root(group) > root";
 # BIG TODO , map the privilege , ie like user1 > user2 > user3 > root
 # privescpath=(user1,user2);(user2,root)
