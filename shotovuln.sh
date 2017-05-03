@@ -67,15 +67,21 @@ fi;
 echo "";
 echo "### 1. Auditing features-like paths to go to other privileges"
 echo "[x] Getting SSH permissions";
-sshperm=$(grep -niR --color permit /etc/ssh/sshd_config);
+if [ -f /etc/ssh/sshd_config ]; then
+    sshperm=$(grep -niR --color permit /etc/ssh/sshd_config);
+fi;
 # echo "[debug] : $sshperm";
 
 echo "[x] Getting allow users (if any) in SSH config"
-sshusers=$(grep -niR --color allowusers /etc/ssh/sshd_config);
+if [ -f /etc/ssh/sshd_config ]; then
+    sshusers=$(grep -niR --color allowusers /etc/ssh/sshd_config);
+fi;
 # echo "[debug]: $sshusers";
 
-echo "[x] Checking port used in SSH config";
+if [ -f /etc/ssh/sshd_config ]; then
 sshport=$(grep Port /etc/ssh/sshd_config | cut -d ' ' -f2);
+fi;
+
 
 # sudo and su brute https://www.altsci.com/concepts/sudo-and-su-considered-harmful-sudosu-bruteforce-utility
 if [ ! -z "$1" ] ; then
@@ -98,6 +104,10 @@ elif [ $brute == true ]; then
  # else exit;
 
 fi;
+
+
+
+
 
 # TODO check if dmesg allows you to privesc echo "Do we have access to dmesg and check privesc related information ?"
 #dmesg script;
