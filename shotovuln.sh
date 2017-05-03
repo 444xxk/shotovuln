@@ -107,7 +107,7 @@ cat /etc/shadow 2>/dev/null;
 cat /etc/shadow.old 2>/dev/null;
 cat /etc/shadow.bak 2>/dev/null;
 
-echo "[x] Checking readable private RSA keys in home folders, ie. wrong RSA key permissions"; #CWE weak file folder permissions
+echo "[x] Checking readable default private RSA keys in home folders, ie. wrong RSA key permissions"; #CWE weak file folder permissions
 for user in $validusers; do cat "/home/$user/.ssh/id_rsa" 2>/dev/null; done
 # extend filename
 
@@ -136,7 +136,7 @@ done
 
 echo "";
 echo "### 3. Auditing SUID and SUID operations without arguments provided"
-# TODO be careful not to kill network with SUID 
+# TODO be careful not to kill network with SUID
 ### https://www.pentestpartners.com/blog/exploiting-suid-executables/;
 echo "[x] SGID folders writable by others, ie. other can get group rights by writing to it"
 find / -type d -perm /g+s -perm /o+w -exec ls -alhd {} + 2>/dev/null;
@@ -150,7 +150,7 @@ mkdir -p "$writedir/.shotologs";
 
 find / -perm /4000 2>/dev/null | sort -u > "$writedir/.suidbinaries";
 while read -r suid; do
-echo "[debug $suid]";
+echo "[debug: started $suid]";
 basename=$(basename "$suid");
 #sleep 6s;
 # TODO bugfix here the script stops at the middle of the list
@@ -222,10 +222,13 @@ find / 2>/dev/null -name "*history"  -exec grep -n -i "--password\|--pass\|-pass
 # $validusers history grepping
 
 
+
+
+
 echo "";
 echo "### 8. Database file information disclosure";
 echo "[x] Checking passwords inside local databases file"
-find / 2>/dev/null -name "*.sqlite" -readable -exec grep -i 'pass' {} +;
+#find / 2>/dev/null -name "*.sqlite" -readable -exec grep -i 'pass' {} +;
 
 
 
