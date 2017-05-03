@@ -5,3 +5,5 @@ find / |awk '/\.db|\.sql|\.sqlite/ && !/\/ports\/|msf/' #find sql databases with
 
 # gcc -o suid suid.c
 # ./suid
+
+# getfacl --recursive --skip-base /
