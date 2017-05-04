@@ -2,9 +2,9 @@
 
 echo "SHOTOVULN v0.2        *0* Senseiiii show me the path to R00t *o* "
 # insert ASCII art =)
-echo "Usage: $0 [currentpassword] [brute] [network]";
+echo "Usage: $0 [currentpassword] [brute] [network] [nosuidaudit] [pupy] [msf]";
 echo "Vulnerabilities will be outputed under each [x] test";
-# github 444xxk/shotovuln
+# source : github 444xxk/shotovuln
 
 # PHILOSOPHY for devs
 # - non interactive
@@ -18,22 +18,27 @@ echo "Vulnerabilities will be outputed under each [x] test";
 # requirement on the compromised box : *nix OS, bash [+ python , pip : for brute]
 # typical usage: you get a webshell and you want to elevate
 
-#main TODO make all ideas already present in comments work and finalize it v1.0
+# main TODO make all ideas already present in comments work and finalize it v1.0
 # TODO need to check if "find" is the best cmd to check permissions
+# TODO limit find to maxdepth to avoid long scan time
 
 echo "";
 echo "### 0. Pre work";
 
 brute=false;
 network=false;
-declare -a passfound;
+declare -a passfounds;
 
 # if root exit
 if [ "$2" == "brute" ] ; then brute=true; echo "[B] brute mode"; else echo "[NB] no bruteforce" ; fi
 if [ "$3" == "network" ] ; then network=true; echo "[N] network allowed"; else echo "[NN] network not allowed"; fi
+#  if [ "$4" == "nosuidaudit" ] ; then nosuid=true; echo "[NS] no SUID binaries allowed"; else echo "[S] suid testing allowed"; fi
+# start a pupy RAT session to use pupy post exploit modules
+# start a meterptr session to use msf post exploit modules
+
 
 echo "[o] Saving writable folders for everyone, useful for next steps";
-writabledirs=$(find / -type d -perm /o+w ! -path "*mqueue*" 2>/dev/null);
+writabledirs=$(find / -maxdepth 5 -type d -perm /o+w ! -path "*mqueue*" 2>/dev/null);
 writedir=$(echo "$writabledirs" | head -n1);
 echo "[o] Will use as writable dir: $writedir";
 
@@ -158,10 +163,6 @@ find /dev/mem -readable 2>/dev/null -exec ls -alh {} +;
 # TODO check not hardcoded /home but valid users home
 # check github.com/51x/LUI for users script
 
-# .gpg folder check
-echo "[x] Checking gpg folder secrets";
-ls -alh /home/*/.gpg;
-
 
 echo "";
 echo "### 3. Auditing SUID/SGID and SUID/SGID operations, without arguments provided"
@@ -173,6 +174,7 @@ find / -type d -perm /g+s -perm /o+w -exec ls -alhd {} + 2>/dev/null;
 echo "[x] SUID folders writable by others, ie. other can get user rights by writing to it"; #example CVE-xxx
 find / -type d -perm /u+s -perm /o+w -exec ls -alhd {} + 2>/dev/null;
 #find / -type d -perm /u+s -writable -exec ls -alhd {} + 2>/dev/null;
+# TODO add not current user test ie ! -user $currentuser ;
 # TODO echo "Test SUID conf files for error based info disclosure"
 # TODO code it --conf / -c / grep conf in help
 # example ./suidbinary -conf /etc/shadow outputs the user hashes
@@ -211,8 +213,9 @@ find / 2>/dev/null -name "httpd.conf" -exec grep -n -i 'Options +FollowSymLinks'
 echo "[x] Pythonpath variable issues, ie. if PATH is vulnerable and a python privilege script runs, other can inject into its PATH"; #example CVE-xxx
 pythonpath=$(python -c "import sys; print '\n'.join(sys.path);")
 for path in $pythonpath; do find "$path" 2>/dev/null -type d -perm /o+w -exec ls -alhd {} +; done
-
-
+echo "[x] Checking terminals permissions, ie. other can write or read from other user terminals and get their privileges"; #example CVE-xxx
+find /dev/pts/ 2>/dev/null -perm /o+r -exec ls -alh {} +;
+#find /dev/tty* 2>/dev/null -perm /o+r -exec ls -alh {} +;
 
 
 
