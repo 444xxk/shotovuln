@@ -27,12 +27,13 @@ echo "### 0. Pre work";
 
 brute=false;
 network=false;
+suid=false;
 declare -a passfounds;
 
 # if root exit
 if [ "$2" == "brute" ] ; then brute=true; echo "[B] brute mode"; else echo "[NB] no bruteforce" ; fi
 if [ "$3" == "network" ] ; then network=true; echo "[N] network allowed"; else echo "[NN] network not allowed"; fi
-#  if [ "$4" == "nosuidaudit" ] ; then nosuid=true; echo "[NS] no SUID binaries allowed"; else echo "[S] suid testing allowed"; fi
+if [ "$4" == "suidaudit" ] ; then suid=true; echo "[NS] SUID binaries audit allowed"; else echo "[S] suid testing allowed"; fi
 # start a pupy RAT session to use pupy post exploit modules
 # start a meterptr session to use msf post exploit modules
 
@@ -164,6 +165,7 @@ find /dev/mem -readable 2>/dev/null -exec ls -alh {} +;
 # check github.com/51x/LUI for users script
 
 
+if [ $suid == true ] ; then
 echo "";
 echo "### 3. Auditing SUID/SGID and SUID/SGID operations, without arguments provided"
 # TODO be careful not to kill network with SUID
@@ -200,7 +202,7 @@ grep -n --color "getenv(" "$writedir"/.shotologs/*;
 echo "[x] Exec used in SUID binaries, ie. other can fool SUID use of PATH, untrusted use of PATH." #example CVE-xxx
 grep -n --color 'execve(\.' "$writedir"/.shotologs/*;
 
-
+fi;
 
 
 
@@ -216,8 +218,8 @@ for path in $pythonpath; do find "$path" 2>/dev/null -type d -perm /o+w -exec ls
 echo "[x] Checking terminals permissions, ie. other can write or read from other user terminals and get their privileges"; #example CVE-xxx
 find /dev/pts/ 2>/dev/null -perm /o+r -exec ls -alh {} +;
 #find /dev/tty* 2>/dev/null -perm /o+r -exec ls -alh {} +;
-
-
+# echo "[x] Checking DBUS vulnerabilities [WIP]" ; # example CVE-2017-8422 (KAuth) and CVE-2017-8849 (smb4k)
+#TODO  use python to check dbus isssues ?
 
 
 echo "";
@@ -250,7 +252,7 @@ grep -R '/tmp' /etc/init.d/* | grep -v '#';
 
 
 echo "";
-echo -e "### 6. Configuration files password disclosure and password reuse";
+echo -e "### 6. Configuration files, password disclosure and password reuse";
 echo "[x] Checking readable passwords used in .conf files, ie. other can read and use them or try password reuse";
 conffiles=$(find / -type f -readable 2>/dev/null -name "*.conf" | sort -u);
 for file in $conffiles; do
@@ -258,18 +260,18 @@ for file in $conffiles; do
 done
 #find / 2>/dev/null -name "*.conf"  -exec grep -n -i "password =\|password=\|password :\|password:" {} +;
 # TODO filter false positives, filter comments
-
-
+echo "[x] Checking writable .conf files, ie current user cannot modify them to achieve privesc" # example CWE
+find /etc 2>/dev/null -name "*.conf" -writable;
 
 
 
 echo "";
 echo "### 7. Log file information disclosure";
 echo "[x] Checking history files and harvesting info, ie. other can read password and try password reuse"; # example CWE file folder permission
-find / 2>/dev/null -name "*history"  -exec grep -n -i "--password\|--pass\|-pass\|-p" {} +;
+find / 2>/dev/null -name "*history"  -exec grep -n -i "password\|pass\|\-p" {} +;
 # $validusers history grepping
-
-
+echo "[x] Checking log files for passwords, ie. other can read and try password reuse";
+find / 2>/dev/null -name "*.log" -exec grep -n -i "password" {} +;
 
 
 
