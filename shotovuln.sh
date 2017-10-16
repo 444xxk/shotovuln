@@ -7,18 +7,18 @@ echo "Vulnerabilities will be outputed under each [x] test";
 # source : github 444xxk/shotovuln
 
 # PHILOSOPHY for devs
-# - non interactive
-# - stealth , try not to touch drive except if needed, try to run everything in memory as much as possible
+# - non interactive shell 
+# - stealth, try not to touch drive except if needed, try to run everything in memory
 # - do not output useless information, only valid vuln or nothing
 # - run as low privilege user
 # - show clear path to root
-# - no colors , can be used outside of standard terminals (webshells)
-# - output to file for better read
-# - try to document the vuln in comment (ie CVE-xxx CWE)
+# - no colors, can be used outside of standard terminals
+# - user should pipe output to file for better read
+# - try to document the vuln example in comments (ie CVE-xxx CWE weakness)
 # requirement on the compromised box : *nix OS, bash [+ python , pip : for brute]
-# typical usage: you get a webshell and you want to elevate
+# typical usage: you get a webshell on *nix and you want to elevate
 
-# main TODO make all ideas already present in comments work and finalize it v1.0
+# TODO code all ideas already present in comments work and finalize it for v3 
 # TODO need to check if "find" is the best cmd to check permissions
 # TODO limit find to maxdepth to avoid long scan time
 
@@ -33,9 +33,9 @@ declare -a passfounds;
 # if root exit
 if [ "$2" == "brute" ] ; then brute=true; echo "[B] brute mode"; else echo "[NB] no bruteforce" ; fi
 if [ "$3" == "network" ] ; then network=true; echo "[N] network allowed"; else echo "[NN] network not allowed"; fi
-if [ "$4" == "suidaudit" ] ; then suid=true; echo "[NS] SUID binaries audit allowed"; else echo "[S] suid testing allowed"; fi
+if [ "$4" == "suidaudit" ] ; then suid=true; echo "[S] SUID binaries audit allowed"; else echo "[NS] suid testing not allowed"; fi
 # start a pupy RAT session to use pupy post exploit modules
-# start a meterptr session to use msf post exploit modules
+# start a meterptr session to use msf local exploit modules
 
 
 echo "[o] Saving writable folders for everyone, useful for next steps";
@@ -81,8 +81,7 @@ fi;
 
 echo "[x] Getting allow users (if any) in SSH config"
 if [ -f /etc/ssh/sshd_config ]; then
-    sshusers=$(grep -niR --color allowusers /etc/ssh/sshd_config);
-fi;
+    sshusers=$(grep -niR --color allowusers /etc/ssh/sshd_config);fi;
 # echo "[debug]: $sshusers";
 
 if [ -f /etc/ssh/sshd_config ]; then
@@ -102,7 +101,7 @@ sudo -l;
 elif [ $brute == true ]; then
  echo " ! No password provided ! "
  echo "[x] Bruteforcing the loggedin user password through SUDO with python scripts"; # example CWE weak password
- # TODO faster sudo bruteforcer , using python child / pexpect
+ # TODO faster sudo bruteforcer, using python child / pexpect
  # python $tooldir/sudo_brute1.py < "$passwords" ; # here use a better script or smaller wordlist
 
  echo "[x] Brute forcing local users password through SU with python scripts"; # example CWE weak password
@@ -119,7 +118,8 @@ fi;
 
 
 
-# TODO check if dmesg allows you to privesc echo "Do we have access to dmesg and check privesc related information ?"
+# TODO check if dmesg allows you to privesc 
+# echo "Do we have access to dmesg and check privesc related information ?" ie can we elevate with dmesg info ? 
 #dmesg script;
 
 
@@ -138,7 +138,7 @@ echo "[x] Checking readable default private RSA keys in home folders, ie. wrong 
 for user in $validusers; do cat "/home/$user/.ssh/id_rsa" 2>/dev/null; done
 # TODO extend filename, remove currentuser key
 
-echo "[x] Root owned files in non root owned directory, ie. other can replace root owned files or symlink"; #example CVE-xxx nginx package vuln, exploit with /etc/
+echo "[x] Root owned files in non root owned directory, ie. other can replace root owned files or symlink"; #example CVE-2016-1247 nginx package vuln, exploit with /etc/
 for x in $(find /var -type f -user root 2>/dev/null -exec dirname {} + | sort -u); do (echo -n "root files in folder $x owned by " && stat -c %U "$x") | grep -v 'root'; done
 
 echo "[x] Writable directory in default PATH, ie. other can tamper PATH of scripts which run automatically"; #example CVE-xxx
