@@ -131,16 +131,16 @@ fi;
 echo "";
 echo "### 2. Auditing file and folders permissions for privesc"
 
-echo "[x] Simply cating /etc/shadow and /etc/shadow derivatives, ie. might be lucky"; #CWE weak file folder permissions
+echo "[x] Simply cating /etc/shadow and /etc/shadow derivatives, ie. might be lucky"; #CVE-xxx CWE weak file folder permissions
 cat /etc/shadow 2>/dev/null;
 cat /etc/shadow.* 2>/dev/null;
 find / 2>/dev/null -readable -name '/*shadow*' -exec grep -n ':/' {} +;
 
-echo "[x] Checking readable default private RSA keys in home folders, ie. wrong RSA key permissions"; #CWE weak file folder permissions
+echo "[x] Checking readable default private RSA keys in home folders, ie. wrong RSA key permissions"; #CVE-xxx CWE weak file folder permissions
 for user in $validusers; do cat "/home/$user/.ssh/id_rsa" 2>/dev/null; done
 # TODO extend filename, remove currentuser key
 
-echo "[x] Root owned files in non root owned directory, ie. other can replace root owned files or symlink"; #example CVE-2016-1247 nginx package vuln, exploit with /etc/
+echo "[x] Root owned files in non root owned directory, ie. other can replace root owned files or symlink"; #example CVE-2016-1247 nginx package vuln, CWE weak file folder permissions
 for x in $(find /var -type f -user root 2>/dev/null -exec dirname {} + | sort -u); do (echo -n "root files in folder $x owned by " && stat -c %U "$x") | grep -v 'root'; done
 
 echo "[x] Writable directory in default PATH, ie. other can tamper PATH of scripts which run automatically"; #example CVE-xxx
