@@ -1,3 +1,4 @@
+
 # shotovuln
 
 An offensive bash script which tries to find GENERIC privilege escalation or privilege changes vulnerabilities and similar issues on \*Nix systems. The tool will try to focus only on useful information. 
@@ -23,3 +24,7 @@ typical usage: you get a webshell on \*nix and you want to elevate
 # args 
 
 Usage: ./shotovuln.sh [currentpassword] [brute] [network] [nosuidaudit] [pupy] [msf]
+
+# another audit script for Linux again ? seriously ? 
+
+Yes and no. This is attack oriented. Alternative for this script (lynis, upc, ...) are outputing too much unecessary information or information which need to be cross checked. These step slows down pentesters in their tentative to escalate. This script also focuses on the cause of the vulnerability so it might find new ones. 
