@@ -3,7 +3,7 @@
 echo "SHOTOVULN v0.2        *0* Senseiiii show me the path to R00t *o* "
 # insert ASCII art =)
 echo "Usage: $0 [currentpassword] [brute] [network] [nosuidaudit] [pupy] [msf]";
-echo "Vulnerabilities will be outputed under each [x] test";
+echo "Vulnerabilities found will be output under each [x] test";
 # source : github 444xxk/shotovuln
 
 # PHILOSOPHY for devs
@@ -15,7 +15,7 @@ echo "Vulnerabilities will be outputed under each [x] test";
 # - no colors, can be used outside of standard terminals
 # - user should pipe output to file for better read
 # - try to document the vuln example in comments (ie CVE-xxx CWE weakness)
-# requirement on the compromised box : *nix OS, bash [+ python , pip : for brute]
+# requirement on the compromised box : *nix OS, bash [+ python , pip: for brute]
 # typical usage: you get a webshell on *nix and you want to elevate
 
 # TODO code all ideas already present in comments work and finalize it for v3 
@@ -30,7 +30,9 @@ network=false;
 suid=false;
 declare -a passfounds;
 
-# if root exit
+# if root exit test 
+
+# brutefroce network packets or SUID running might be noisy, so these are disabled by default 
 if [ "$2" == "brute" ] ; then brute=true; echo "[B] brute mode"; else echo "[NB] no bruteforce" ; fi
 if [ "$3" == "network" ] ; then network=true; echo "[N] network allowed"; else echo "[NN] network not allowed"; fi
 if [ "$4" == "suidaudit" ] ; then suid=true; echo "[S] SUID binaries audit allowed"; else echo "[NS] suid testing not allowed"; fi
@@ -44,7 +46,7 @@ writedir=$(echo "$writabledirs" | head -n1);
 echo "[o] Will use as writable dir: $writedir";
 
 tooldir="$(pwd)/tools/";
-echo "[o] Tools dir is : $tooldir"
+echo "[o] Tools dir is: $tooldir"
 
 currentuser=$(id);
 currentgroup=$(groups);
@@ -72,7 +74,7 @@ fi;
 
 
 echo "";
-echo "### 1. Auditing features-like paths to go to other privileges"
+echo "### 1. Auditing feature-like paths to go to other privileges"
 echo "[x] Getting SSH permissions";
 if [ -f /etc/ssh/sshd_config ]; then
     sshperm=$(grep -niR --color permit /etc/ssh/sshd_config);
@@ -285,7 +287,7 @@ sqlitefiles=$(find / 2>/dev/null -name "*.sqlite" -readable);
 echo "";
 echo "### X. Privesc matrix";
 # we might need to create a matrix of user privs
-echo "[x] Creating a matrix of user privilege switch ..."
+echo "[x] Creating a matrix of user privileges possibilities ..."
 echo "[debug] sample : $currentuser > user2 > user9 > group1 > root(group) > root";
 # BIG TODO , map the privilege , ie like user1 > user2 > user3 > root
 # privescpath=(user1,user2);(user2,root)
