@@ -167,10 +167,8 @@ find /dev/mem -readable 2>/dev/null -exec ls -alh {} +;
 # check github.com/51x/LUI for users script
 
 
-if [ $suid == true ] ; then
 echo "";
-echo "### 3. Auditing SUID/SGID and SUID/SGID operations, without arguments provided"
-# TODO be careful not to kill network with SUID
+echo "### 3. Auditing SUID/SGID and SUID/SGID operations, without arguments provided";
 ### https://www.pentestpartners.com/blog/exploiting-suid-executables/;
 echo "[x] SGID folders writable by others, ie. other can get group rights by writing to it"; #example CVE-xxx
 find / -type d -perm /g+s -perm /o+w -exec ls -alhd {} + 2>/dev/null;
@@ -179,6 +177,8 @@ echo "[x] SUID folders writable by others, ie. other can get user rights by writ
 find / -type d -perm /u+s -perm /o+w -exec ls -alhd {} + 2>/dev/null;
 #find / -type d -perm /u+s -writable -exec ls -alhd {} + 2>/dev/null;
 # TODO add not current user test ie ! -user $currentuser ;
+if [ $suid == true ] ; then
+# TODO be careful not to kill network with SUID
 # TODO echo "Test SUID conf files for error based info disclosure"
 # TODO code it --conf / -c / grep conf in help
 # example ./suidbinary -conf /etc/shadow outputs the user hashes
@@ -221,7 +221,7 @@ echo "[x] Checking terminals permissions, ie. other can write or read from other
 find /dev/pts/ 2>/dev/null -perm /o+r -exec ls -alh {} +;
 #find /dev/tty* 2>/dev/null -perm /o+r -exec ls -alh {} +;
 # echo "[x] Checking DBUS vulnerabilities [WIP]" ; # example CVE-2017-8422 (KAuth) and CVE-2017-8849 (smb4k)
-#TODO  use python to check dbus isssues ?
+#TODO use python to check dbus isssues ?
 
 
 echo "";
